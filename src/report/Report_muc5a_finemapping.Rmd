@@ -1,0 +1,58 @@
+---
+title: "MUC5AC Fine-mapping analysis"
+author: "Nomei Nicole Piga"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: "hide"
+    toc: true
+    toc_float: true
+    theme: united
+---
+
+
+```{r, setup, hide = TRUE}
+#library reticulate to be able to add chuncks in another language
+library(reticulate)
+# To run this .rmd file in a terminal being in the project folder:
+#export PATH=${PATH}:/cm/shared/apps/R/deps/rstudio/bin/pandoc
+#file="./report/Sentinel_and_conditional_analysis.Rmd"
+#module unload R/4.2.1
+#module load R/4.1.0
+#Rscript -e 'rmarkdown::render("'$file'")'
+```
+# Rationale
+Using PolyFun+SuSie to fine-map the MUC5AC region in Shrine et al. moderate-severe asthma and GBMI asthma summary statistics; compare them to each other and the chronic sputum.
+<br>
+##Data
+Bayesian fine-mapping was conducted as part of the chronic sputum paper (supplementary table 10).
+<br>
+The raw GWAS results for the chronic sputum study: /data/gen1/Phlegm/Results_files/GWAS/combined_results_INFO_MAC20
+<br>
+Shrine et al. moderate-severe asthma summary statistics with sentinel rs11603634: /rfs/TobinGroup/kaf19/Public_data/ukb_mod_sev_asthma/Shrine_30552067_moderate-severe_asthma.txt.gz
+<br>
+GBMI asthma summary statistics with sentinel variant rs11245964: /rfs/TobinGroup/kaf19/Public_data/gbmi_asthma/Asthma_Bothsex_eur_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz
+
+# Analysis
+Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/polyfun_susie.sh
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/polyfun_susie.sh'), eval=FALSE}
+```
+Fine-mapping of the MUC5AC regions +/- 500Kb from the sentinel variant: rs11603634 for European moderate-to-severe, rs11245964 for European GBMI all-comer asthma.
+<br>
+For GBMI, the sample size differs for SNP. I am still trying to figuring it out how to use polyfun+SuSie with a per-SNP sample size. I found an R package that allows this, but I am unable to download it in R due to memory problem with github. I used the median sample size (which is also the maximum number) and the minimum sample size for now. In terms of results, I got the same 5 variants in the 95% credible set.
+
+# Results
+
+
+# Conclusion
+
+
+# Notes
+
+# References
+
+
+```{r, out.width='100%', out.height='200%', fig.align='center', fig.cap='Table 2.Look-up sentinel variants. CHR=Chromosome; BP=Base position; B37=Build 37; B38=Build 38; OR=Odds Ratio; CI=95% Confidence Interval; UKB=UK Biobank.', echo = FALSE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/REGENIE_assoc/src/report/Lookup_Sentinel_vars.PNG')
+```
+
