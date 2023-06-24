@@ -1,0 +1,21 @@
+#!/usr/bin/env Rscript
+
+suppressMessages(library(tidyverse))
+suppressMessages(library(data.table))
+gbmi_sumstat <- fread("/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/input/b38_with_b37_chr11_gbmi_sumstat")
+colnames(gbmi_sumstat) <- c("Chromosome","BP","A2","A1","SNP","A1_freq","beta","SE","P","N","MAF")
+gbmi_sumstat$BP <- as.numeric(gbmi_sumstat$BP)
+gbmi_sumstat <- gbmi_sumstat %>% arrange(BP)
+gbmi_sumstat$index <- seq(0,dim(gbmi_sumstat)[1]-1)
+b37 <- fread("/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/input/b37_chr11_gbmi.bed")
+b37 <- b37 %>% separate(V4, c("CHR","discard","BP"),sep=c(":|-"))
+b37$discard <- NULL
+b37$BP <- as.numeric(b37$BP)
+b37 <- b37 %>% arrange(BP)
+b37$index <- seq(0,dim(b37)[1]-1)
+gbmi_sumstat_b37 <- left_join(b37,gbmi_sumstat,by=c("BP","index"))
+gbmi_sumstat_b37 <- gbmi_sumstat_b37 %>% rename(BP37 = V2)
+gbmi_sumstat_b37 <- gbmi_sumstat_b37 %>% select(Chromosome, BP37, A2, A1, SNP, A1_freq, beta, SE, P, N, MAF)
+gbmi_sumstat_b37 <- gbmi_sumstat_b37 %>% rename(BP = BP37, CHR = Chromosome)
+gbmi_sumstat_b37 <- gbmi_sumstat_b37 %>% distinct(BP, .keep_all=T)
+write.table(gbmi_sumstat_b37,"/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/input/b37_chr11_gbmi_eur_sumstat_maf", na="NA", sep=" ",quote=F,row.names=F)

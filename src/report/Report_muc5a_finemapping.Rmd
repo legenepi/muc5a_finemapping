@@ -16,7 +16,7 @@ output:
 library(reticulate)
 # To run this .rmd file in a terminal being in the project folder:
 #export PATH=${PATH}:/cm/shared/apps/R/deps/rstudio/bin/pandoc
-#file="./report/Sentinel_and_conditional_analysis.Rmd"
+#file="./report/Report_muc5a_finemapping.Rmd"
 #module unload R/4.2.1
 #module load R/4.1.0
 #Rscript -e 'rmarkdown::render("'$file'")'
@@ -24,6 +24,7 @@ library(reticulate)
 # Rationale
 Using PolyFun+SuSie to fine-map the MUC5AC region in Shrine et al. moderate-severe asthma and GBMI asthma summary statistics; compare them to each other and the chronic sputum.
 <br>
+Polyfun is a software that allows the use of prior probabilities as per-SNP heritability calculated based on multiple functional annotations/measures. 
 ##Data
 Bayesian fine-mapping was conducted as part of the chronic sputum paper (supplementary table 10).
 <br>
@@ -37,22 +38,56 @@ GBMI asthma summary statistics with sentinel variant rs11245964: /rfs/TobinGroup
 Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/polyfun_susie.sh
 ```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/polyfun_susie.sh'), eval=FALSE}
 ```
+Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/create_maf.R
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/create_maf.R'), eval=FALSE}
+```
+Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/credset.R
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/credset.R'), eval=FALSE}
+```
+Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/create_maf_gbmi.R
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/create_maf_gbmi.R'), eval=FALSE}
+```
+Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/gbmi_b37.R
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/gbmi_b37.R'), eval=FALSE}
+```
+Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/compare_credset.R
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/compare_credset.R'), eval=FALSE}
+```
+
+
 Fine-mapping of the MUC5AC regions +/- 500Kb from the sentinel variant: rs11603634 for European moderate-to-severe, rs11245964 for European GBMI all-comer asthma.
 <br>
-For GBMI, the sample size differs for SNP. I am still trying to figuring it out how to use polyfun+SuSie with a per-SNP sample size. I found an R package that allows this, but I am unable to download it in R due to memory problem with github. I used the median sample size (which is also the maximum number) and the minimum sample size for now. In terms of results, I got the same 5 variants in the 95% credible set.
+For GBMI, the sample size differs for SNP. I am still trying to figuring it out how to use polyfun+SuSie with a per-SNP sample size. I found an R package that allows this, but I am unable to download it in R due to memory problem with github. I used the median sample size (which is also the maximum number) and the minimum sample size for now. In both cases, the software found the same variants in the 95% credible set, and the posterior inclusion probabilities are similar.
 
 # Results
+A total of 3690 variants were examined for the moderate-to-severe fine-mapping and 34 were identified in 95% credible set.
+<br>
+Regarding GBMI, 3781 variants were investigated and 11 variants were identified for the 95% credible set.
+<br>
+```{r, echo = FALSE}
+df <- read.table('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/credset_3_gwas.txt')
+DT::datatable(df, height = 200, options = list(scrollX = TRUE, scrollY = FALSE))
+```
+<br>
+<br>
+<br>
+Comparing the credible set, 6 variants were shared across all the three credible sets; 21 variants were shared among the chronic sputum and the moderate-to-severe; 3, 7, and 5 variants were private respectively to chronic sputum, moderate-to-severe, and GBMI (Figure 1).
+<br>
+```{r, out.width='50%', out.height='50%', fig.align='center', fig.cap='Figure 1. Venn diagram of the three 95% credible sets.', echo = FALSE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset.png')
+```
 
 
 # Conclusion
-
+A total of 42 variants were identified in the credibel sets among the three studies; ~64% showed were found by at least two studies.  
 
 # Notes
+I used the pre-computed prior SNP probabilities calcualted by polyfun's authors. In doing so, I lost 441 and 389 variants in the fine-mapping for moderate-to-severe and GBMI study respectively, among which two variants that were found in the chronic sputum credible set (10.67% and 9.33% missing variants).
 
 # References
+Weissbrod 0. et al, Functionally informed fine-mapping and polygenic localization of complex trait heritability. Nat Genet 2020,doi:https://doi.org/10.1038/s41588-020-00735-5
+<br>
+https://github.com/omerwe/polyfun
 
 
-```{r, out.width='100%', out.height='200%', fig.align='center', fig.cap='Table 2.Look-up sentinel variants. CHR=Chromosome; BP=Base position; B37=Build 37; B38=Build 38; OR=Odds Ratio; CI=95% Confidence Interval; UKB=UK Biobank.', echo = FALSE}
-knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/REGENIE_assoc/src/report/Lookup_Sentinel_vars.PNG')
-```
 
