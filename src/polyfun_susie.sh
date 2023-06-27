@@ -1,14 +1,17 @@
 #!/bin/bash
 
+#set up local variable, environment to use:
 path_dir="/home/n/nnp5/PhD/PhD_project/muc5a_finemapping"
 module load python/gcc/3.9.10
 conda activate polyfun
 module load gcc/9.3
+cd ${path_dir}/
 
+#required install:
 #install parquet-tools to read parquet file in bash: python3 -m pip install parquet-tools
-#Step1. Create a munged summary statistics file in a PolyFun-friendly parquet format.
 
 ##MODERATE-TO-SEVERE:
+#Step1. Create a munged summary statistics file in a PolyFun-friendly parquet format.
 #SNP	Chromosome	Position_b37	Coded Non_coded	Coded_freq	INFO	beta	SE_GC P_GC
 zcat /rfs/TobinGroup/kaf19/Public_data/ukb_mod_sev_asthma/Shrine_30552067_moderate-severe_asthma.txt.gz | \
     sed 's/Position_b37/BP/g' | \
@@ -69,7 +72,10 @@ python /home/n/nnp5/software/polyfun/finemapper.py \
 #Extract credset 95% in R
 dos2unix ${path_dir}/src/credset.R
 chmod o+x ${path_dir}/src/credset.R
-Rscript ${path_dir}/src/credset.R ${path_dir}/output/polyfun_susie_modsev ${path_dir}/output/polyfun_susie_modsev_credset
+Rscript ${path_dir}/src/credset.R \
+    ${path_dir}/output/polyfun_susie_modsev \
+    ${path_dir}/output/polyfun_susie_modsev_credset \
+    ${path_dir}/output/polyfun_susie_modsev_credset_credsetbysusie
 
 
 #####################################
@@ -183,13 +189,28 @@ python /home/n/nnp5/software/polyfun/finemapper.py \
 conda deactivate polyfun
 
 #Extract credset 95% in R:
-Rscript ${path_dir}/src/credset.R ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian ${path_dir}/output/polyfun_susie_gbmi_eur_credset_Nmedian
-Rscript ${path_dir}/src/credset.R ${path_dir}/output/polyfun_susie_gbmi_eur_Nmin ${path_dir}/output/polyfun_susie_gbmi_eur_credset_Nmin
+Rscript ${path_dir}/src/credset.R \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_credset_Nmedian \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian_credsetbysusie
+
+Rscript ${path_dir}/src/credset.R \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmin \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_credset_Nmin \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmin_credsetbysusie
 
 #In R, make Venn diagram comparing the three fine-mapping credible sets:
 dos2unix ${path_dir}/src/compare_credset.R
 chmod o+x ${path_dir}/src/compare_credset.R
 Rscript ${path_dir}/src/compare_credset.R
+
+
+#Using the credible set as found by susie:
+#In order for variables to be in a rho credible set, their PIP have to sum to greater than or equal to rho,
+#and their "purity", defined by minimum absolute pairwise correlation, should be greater than or equal to r.
+# Currently, rho is set to 0.95 and r is set to 0.5. You can lower either these numbers, or both,
+# to be more lenient with credible sets, depending on your analysis context (current default is
+# what we believe reasonable for genetic fine-mapping applications)
 
 #QC:
 #MODSEV: 441 variants not in fine-mapping
@@ -202,3 +223,22 @@ zcat input/gbmi_eur_SNPs_PriCauPro.miss.gz | awk -F "\t" '$2 >= 613278 && $2 <= 
 #2 variants not in fine-mapping for gbmi and found in the credset of chronic sputum (same x modsev):
 zcat input/gbmi_eur_SNPs_PriCauPro.miss.gz | awk -F "\t" '$2 >= 613278 && $2 <= 1613278 {print $2}' | \
     grep -F -f - input/chronic_sputum_credset_muc2
+
+#Look at sentinel variants in other study:
+#moderate-to-severe sentinel variant: rs11603634
+grep -w "rs11603634" /data/gen1/Phlegm/Results_files/GWAS/combined_results_INFO_MAC20
+grep "1136478" ${path_dir}/input/chronic_sputum_credset_muc2
+zgrep -w "rs11603634" /rfs/TobinGroup/kaf19/Public_data/gbmi_asthma/Asthma_Bothsex_eur_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz
+grep -w "rs11603634" ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian
+#chronic sputum sentinel variant: rs779167905, BP:1116931 (rs35606069 in moderate-to-severe)
+zgrep "1116931" /rfs/TobinGroup/kaf19/Public_data/ukb_mod_sev_asthma/Shrine_30552067_moderate-severe_asthma.txt.gz
+grep "1116931" ${path_dir}/output/polyfun_susie_modsev
+zgrep -w "1116931" ${path_dir}/modsev_SNPs_PriCauPro.miss.gz
+zgrep -w "rs779167905" /rfs/TobinGroup/kaf19/Public_data/gbmi_asthma/Asthma_Bothsex_eur_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz
+grep -w "1116931" ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian
+zgrep -w "1116931" /rfs/TobinGroup/kaf19/Public_data/gbmi_asthma/Asthma_Bothsex_eur_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz
+
+#GBMI sentinel variant: rs11245964
+zgrep "rs11245964" /rfs/TobinGroup/kaf19/Public_data/ukb_mod_sev_asthma/Shrine_30552067_moderate-severe_asthma.txt.gz
+grep "rs11245964" ${path_dir}/output/polyfun_susie_modsev
+grep -w "rs11245964" /data/gen1/Phlegm/Results_files/GWAS/combined_results_INFO_MAC20

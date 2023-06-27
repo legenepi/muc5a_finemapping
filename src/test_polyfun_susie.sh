@@ -202,7 +202,7 @@ python /home/n/nnp5/software/polyfun/finemapper.py \
     --out ${path_dir}/output/info09_polyfun_susie_gbmi_eur_Nmin_N1
 Rscript ${path_dir}/src/credset.R ${path_dir}/output/info09_polyfun_susie_gbmi_eur_Nmin_N1 ${path_dir}/output/info09_polyfun_susie_gbmi_eur_credset_Nmin_N1
 
-#COMPARE DIFFERENT INFO AND MAXIMUM NUMBER OF CAUSAL VARIANTS FOR MODERATE-TO-SEVERE:
+#COMPARE DIFFERENT INFO AND MAXIMUM NUMBER OF CAUSAL VARIANTS FOR GBMI:
 #N_median:
 Rscript ${path_dir}/src/compare_different_params.R \
     ${path_dir}/output/polyfun_susie_gbmi_eur_credset_Nmedian "info_085_Nmedian_N10" \
@@ -220,3 +220,39 @@ Rscript ${path_dir}/src/compare_different_params.R \
     ${path_dir}/output/info09_polyfun_susie_gbmi_eur_credset_Nmin_N1 "info_090_Nmin_N1" \
     ${path_dir}/output/Venn_asthma_credset_gbmi_Nmin_params.png \
     ${path_dir}/output/Intersection_asthma_credset_gbmi_Nmin_params_BP_list
+
+#SUSiE did not fins any credible set in the moderate-to-severe with coverage set at 0.95;
+# what about if I set the coverage at .90?
+python /home/n/nnp5/software/polyfun/finemapper.py \
+    --ld ${path_dir}/input/chr11_1_3000001 \
+    --sumstats ${path_dir}/input/modsev_SNPs_PriCauPro \
+    --n 30810 \
+    --chr 11 \
+    --start 636478 \
+    --end 1636478 \
+    --method susie \
+    --max-num-causal 10 \
+    --allow-missing \
+    --out ${path_dir}/output/polyfun_susie_modsev_coverage90
+
+##but if rs35606069 is excluded because it is not found in the pre-calculated priors
+##could you repeat with just Susie (not with PolyFun)?
+#Run moderate-to-severe without prior so that the sumstats has the chronic sputum sentinel variant:
+#sumstat: gbmi_eur_sumstats_munged.parquet
+#--non-funct parameter for non-functionally informed fine-mapping
+python /home/n/nnp5/software/polyfun/finemapper.py \
+    --ld ${path_dir}/input/chr11_1_3000001 \
+    --sumstats ${path_dir}/input/gbmi_eur_sumstats_munged.parquet \
+    --n 30810 \
+    --chr 11 \
+    --start 636478 \
+    --end 1636478 \
+    --method susie \
+    --non-funct \
+    --max-num-causal 10 \
+    --allow-missing \
+    --out ${path_dir}/output/polyfun_susie_modsev_noprior
+Rscript ${path_dir}/src/credset.R \
+    ${path_dir}/output/polyfun_susie_modsev_noprior \
+    ${path_dir}/output/polyfun_susie_modsev_noprior_credset \
+    ${path_dir}/output/polyfun_susie_modsev_noprior_credsetbysusie
