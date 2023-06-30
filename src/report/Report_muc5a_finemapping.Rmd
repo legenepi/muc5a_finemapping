@@ -1,6 +1,6 @@
 ---
 title: "MUC5AC Fine-mapping analysis"
-author: "Nomei Nicole Piga"
+author: "Noemi Nicole Piga"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
@@ -22,21 +22,17 @@ library(reticulate)
 #Rscript -e 'rmarkdown::render("'$file'")'
 ```
 # Rationale
-Using PolyFun+SuSie to fine-map the MUC5AC region in Shrine et al. moderate-severe asthma and GBMI asthma summary statistics; compare them to each other and the chronic sputum.
+Using PolyFun+SuSie [1] or SuSiE [2] to fine-map the MUC5AC region in Shrine et al. moderate-severe asthma [3] and Global Biobank Meta-analysis Initiative (GBMI) asthma summary statistics [4] for European ancestry individuals; compare them to each other and the chronic sputum study [5].
 <br>
-Polyfun is a software that allows the use of prior probabilities as per-SNP heritability calculated based on multiple functional annotations/measures. 
+SuSiE is a software for bayesian fine-mapping that allows up to 10 variants to be causal in a credibel set. Polyfun is a software that allows the use of prior probabilities as per-SNP heritability calculated based on multiple functional annotations/measures [1]; The posterior probability is calculated using the SNP's marginal effect size (from the GWAS analysis) together with the prior (https://github.com/omerwe/polyfun/issues/131).
 <br>
-The posterior probability is calculated using the SNP's marginal effect size (from the GWAS analysis) together with the prior (https://github.com/omerwe/polyfun/issues/131).
-##Data
-Bayesian fine-mapping was conducted as part of the chronic sputum paper (supplementary table 10).
+For moderate-to-severe, I was able to use SuSiE with individual level data. For GBMI, I had to use the LD matrix as calculated by Polyfun's author in White British European from UK Biobank [1].
 <br>
-The raw GWAS results for the chronic sputum study: /data/gen1/Phlegm/Results_files/GWAS/combined_results_INFO_MAC20
-<br>
-Shrine et al. moderate-severe asthma summary statistics with sentinel rs11603634: /rfs/TobinGroup/kaf19/Public_data/ukb_mod_sev_asthma/Shrine_30552067_moderate-severe_asthma.txt.gz
-<br>
-GBMI asthma summary statistics with sentinel variant rs11245964: /rfs/TobinGroup/kaf19/Public_data/gbmi_asthma/Asthma_Bothsex_eur_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz
+From the fine-mapping output, I retrieved the credible set as identified by SuSiE ('CREDIBLE SET' column equal to 1). If SuSiE did not output any credible set, I identified the credible set including variants with decreasing posterior probability until their cumulative sum reached 0.95.
 
 # Analysis
+Github repository page: https://github.com/legenepi/muc5a_finemapping
+<br>
 Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/polyfun_susie.sh
 ```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/polyfun_susie.sh'), eval=FALSE}
 ```
@@ -61,42 +57,89 @@ Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/test_polyfun_susie.sh
 Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/compare_different_params.R
 ```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/compare_different_params.R'), eval=FALSE}
 ```
+Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/Susie.sh
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/Susie.sh'), eval=FALSE}
+```
+Code: /home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/susie.R
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/src/susie.R'), eval=FALSE}
+```
 
-Fine-mapping of the MUC5AC regions +/- 500Kb from the sentinel variant: rs11603634 for European moderate-to-severe, rs11245964 for European GBMI all-comer asthma.
+
+## Data
+I used the following data as starting point for each cohort:
+
+ * Bayesian (Wakefield) fine-mapping was conducted as part of the chronic sputum paper (supplementary table 10, variants in the locus 'MUC2'). Therefore, I did not have to run fine-mapping for this.
+
+ * The raw genome-wide association study (GWAS) results for the chronic sputum: /data/gen1/Phlegm/Results_files/GWAS/combined_results_INFO_MAC20
+
+ * Shrine et al. moderate-severe asthma summary statistics: /rfs/TobinGroup/kaf19/Public_data/ukb_mod_sev_asthma/Shrine_30552067_moderate-severe_asthma.txt.gz
+
+ * GBMI asthma summary statistics: /rfs/TobinGroup/kaf19/Public_data/gbmi_asthma/Asthma_Bothsex_eur_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz
+
+Fine-mapping of the MUC5AC regions +/- 500Kb from the sentinel variant: rs11603634 for Shrine et al. moderate-to-severe, rs11245964 for GBMI all-comer asthma.
 <br>
-For GBMI, the sample size differs for SNP. I am still trying to figuring it out how to use polyfun+SuSie with a per-SNP sample size. I found an R package that allows this, but I am unable to download it in R due to memory problem with github. I used the median sample size (which is also the maximum number) and the minimum sample size for now. In both cases, the software found the same variants in the 95% credible set, and the posterior inclusion probabilities are similar.
+For GBMI, the sample size differs for SNP. Polyfun can't be used with a per-SNP sample size, as asked to the author on their github page (https://github.com/omerwe/polyfun/issues/161). I decided to run the analysis with the median number (which is also the maximum sample size).
+<br>
+Results for individual fine-mapping and the merged credible sets can be found in: /data/gen1/UKBiobank_500K/severe_asthma/Noemi_PhD/muc5ac_finemap_output_30062023
 
 # Results
-A total of 3690 variants were examined for the moderate-to-severe fine-mapping and 34 were identified in 95% credible set.
+## Polyfun+SuSiE
+A total of 3,690 variants were examined for the moderate-to-severe fine-mapping and 34 were identified in the 95% credible set.
 <br>
-Regarding GBMI, 3,781 variants were investigated and 11 variants were identified for the 95% credible set.
+Regarding GBMI, 3,781 variants were investigated and 18 variants were identified by SuSiE in the 95% credible set.
+<br>
+When combining the variants from the three credible sets, I obtained a total of 37 variants (Table 1).
+<br>
+Eighteen variants were shared across all the three credible sets and additional nine variants were shared among the chronic sputum and the moderate-to-severe. While all the credible set variant for GBMI were shared with the other two studies, three and seven variants were private to chronic sputum, moderate-to-severe, and GBMI (Figure 1).
 <br>
 ```{r, echo = FALSE}
-df <- read.table('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/credset_3_gwas.txt')
-DT::datatable(df, height = 200, options = list(scrollX = TRUE, scrollY = FALSE))
-```
-<br>
-<br>
-<br>
-Comparing the credible set, 6 variants were shared across all the three credible sets; 21 variants were shared among the chronic sputum and the moderate-to-severe; 3, 7, and 5 variants were private respectively to chronic sputum, moderate-to-severe, and GBMI (Figure 1).
-<br>
-```{r, out.width='80%', out.height='80%', fig.align='center', fig.cap='Figure 1. Venn diagram of the three 95% credible sets.', echo = FALSE}
-knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset.png')
+library(data.table)
+df <- fread('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/credset_3_gwas_gbmibysusie')
+DT::datatable(df,
+              height = 200,
+              options = list(scrollX = TRUE, scrollY = FALSE),
+              caption = 'Table 1. Credible set variants among the three studies. CHR=Chromosome;BP=base position;chsp_A1=chronic sputum effect allele;chsp_A2=chronic sputum non-effect allele;chsp_P=chronic sputum GWAS p-value;chsp_PIP=chronic sputum posterior inclusion probability;modsev_A1=moderate-to-severe effect allele;modsev_A2=moderate-to-severe non-effect allele;modsev_P=moderate-to-severe GWAS p-value;modsev_PIP=moderate-to-severe posterior inclusion probability,gbmi_A1=GBMI effect allele;gbmi_A2=GBMI non-effect alelle;gbmi_P=GBMI GWAS p-value;gbmi_PIP=GBMI posterior inclusion probability.')
 ```
 
-# Notes
-I used the pre-computed prior SNP probabilities calculated by polyfun's authors. In doing so, I lost 441 and 389 variants in the fine-mapping for moderate-to-severe and GBMI study respectively, among which two variants that were found in the chronic sputum credible set (10.67% and 9.33% missing variants).
+```{r, out.width='80%', out.height='80%', fig.align='center', fig.cap='Figure 1. Venn diagram of the three 95% credible sets.', echo = FALSE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset_gbmibysusie.png')
+```
+
+## SuSiE-only
+For moderate-to-severe, the same variants were included in the 95% credible set, except for one. (Table 2, Figure 2)
+For GBMI, the non-functionally informed fine-mapping gave retrieved the same variants as for the Polyfun+SuSiE analysis.
+<br>
+```{r, echo = FALSE}
+library(data.table)
+df <- fread('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/credset_3_gwas_modsevnoprior_gbminopriorbysusie',fill=TRUE)
+DT::datatable(df,
+              height = 200,
+              options = list(scrollX = TRUE, scrollY = FALSE),
+              caption = 'Table 2. Credible set variants among the three studies without functional priors. CHR=Chromosome;BP=base position;SNP.x=SNP chornic sputum;chsp_A1=chronic sputum effect allele;chsp_A2=chronic sputum non-effect allele;chsp_P=chronic sputum GWAS p-value;chsp_PIP=chronic sputum posterior inclusion probability;SNP.y=SNP moderate-to-severe;modsev_A1=moderate-to-severe effect allele;modsev_A2=moderate-to-severe non-effect allele;modsev_P=moderate-to-severe GWAS p-value;modsev_PIP=moderate-to-severe posterior inclusion probability;SNP=SNP GBMI;gbmi_A1=GBMI effect allele;gbmi_A2=GBMI non-effect alelle;gbmi_P=GBMI GWAS p-value;gbmi_PIP=GBMI posterior inclusion probability.')
+```
+
+```{r, out.width='80%', out.height='80%', fig.align='center', fig.cap='Figure 2. Venn diagram of the three 95% credible sets without functional priors.', echo = FALSE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset_modsevnoprior_gbminopriorbysusie.png')
+```
+
+# Conclusion
+I retrieved mostly the same results with and without functionally-informed fine-mapping with 73% of overlap between at least two credible sets.
+<br>
+To note: I used the pre-computed prior SNP probabilities calculated by polyfun's authors. In doing so, I lost 441 and 389 variants in the fine-mapping for moderate-to-severe and GBMI study respectively, among which two variants that were found in the chronic sputum credible set (10.67% and 9.33% missing variants).
 <br>
 To notice as well, polyfun's author pointed out that results from meta-analysis may not be reliable (Table 3 in the main paper [1]) (https://github.com/omerwe/polyfun/issues/161).
 <br>
+Finally, the sentinel variants for the chronic sputum study (rs779167905, merged into rs35606069; build 37: 1116931) is present in the summary statistics of the other two studies, but it was not found in the fine-mapping results.
+
+# Notes: quality check ananlyses
 In addition, I tried to use different parameters for minimum info score and maximum number of causal variants: info score 0.90, and 1 causal variant.
 <br>
-For moderate-to-severe, all the variants are shared except for two (Figure 2):
+For moderate-to-severe, all the variants were shared except for two (Figure 2):
 ```{r, out.width='100%', out.height='100%', fig.align='center', fig.cap='Figure 2. Venn diagram of the credible sets for different parameters for moderate-to-severe.', echo = FALSE}
 knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset_modsev_params.png')
 ```
 <br>
-For GBMI all-comer asthma, having a different type of maximum causal variants influenced which variants are in the credible set (Figure 3 and 4):
+For GBMI all-comer asthma, having a different type of maximum causal variants influenced which variants are in the credible sets (Figure 3 and 4):
 ```{r, out.width='100%', out.height='100%', fig.align='center', fig.cap='Figure 3. Venn diagram of the credible sets for different parameters for GBMI, with N = median sample size.', echo = FALSE}
 knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset_gbmi_Nmedian_params.png')
 ```
@@ -104,16 +147,41 @@ knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/V
 ```{r, out.width='100%', out.height='100%', fig.align='center', fig.cap='Figure 4. Venn diagram of the credible sets for different parameters for GBMI, with N = minimum sample size.', echo = FALSE}
 knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset_gbmi_Nmin_params.png')
 ```
-
-# Conclusion
-A different minimum threshold for info score did not influence the causal variants in a consistent way. Althouugh, a different numbe of maximum causal variant showed visible differences in terms of variants in the credible set for GBMI analysis. As well, fine-mapping from meta-analysis may result in less reliable data, as per polyfun's author.
 <br>
-When using info score 0.85, and 10 possible causal variants, a total of 42 variants were identified in the credible sets among the three studies where ~64% showed were found by at least two studies.  
+In the fine-mapping output, the column 'CREDIBLE_SET' sets in which possible credible set the variant is based on posterior inclusion probability the correlation between variants.
+<br>
+For the moderate-to-severe study, SuSiE did not found any credible sets, so I used the cumulative sum approach: I took the variants with highest PIP until their sum reached 0.95%.
+<br>
+For GBMI study, SuSiE identified one credible set with 18 variants, six of which were found in the previous credset for this study.
+```{bash, eval=FALSE}
+awk -F "," '{print $3}' output/polyfun_susie_gbmi_eur_Nmedian_credsetbysusie | grep -F -f - output/polyfun_susie_gbmi_eur_credset_Nmedian
+```
+<br>
+Here, the Venn diagram updated with the GBMI credible set as by SuSiE (Figure 5). In this case, all the variants in the GBMI's credible set were shared with the other two credible sets:
+```{r, out.width='100%', out.height='100%', fig.align='center', fig.cap='Figure 5. Venn diagram of the credible sets for different cohorts, with GBMI as found by SuSiE.', echo = FALSE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset_gbmibysusie.png')
+```
+<br>
+I also checked the GBMI fine-mapping with SuSiE not functionally-informed (Figure 6 and Figuere 7). In GBMI, the number of variants in the credible set changed according to the method used to define the credible set ('CREDIBLE SET' column equal to 1 / cumulative PIP <= 0.95).
+```{r, out.width='100%', out.height='100%', fig.align='center', fig.cap='Figure 6. Venn diagram of the credible sets for different cohorts using SuSiE no-functional information, GBMI credible set as found by SuSiE.', echo = FALSE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset_modsevnoprior_gbminopriorbysusie.png')
+```
+<br>
+```{r, out.width='100%', out.height='100%', fig.align='center', fig.cap='Figure 7. Venn diagram of the credible sets for different cohorts using SuSiE no-functional information, GBMI credible set as cumulative PIP < 0.95.', echo = FALSE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset_modsevnoprior_gbminoprior.png')
+```
 
 
 # References
-1.Weissbrod 0. et al, Functionally informed fine-mapping and polygenic localization of complex trait heritability. Nat Genet 2020,doi:https://doi.org/10.1038/s41588-020-00735-5
+1.Weissbrod 0. et al., Functionally informed fine-mapping and polygenic localization of complex trait heritability. Nat Genet 2020,doi:https://doi.org/10.1038/s41588-020-00735-5
 <br>
+2.Zou Y. et al., Fine-mapping from summary data with the “Sum of Single Effects” model, Plos genetics 2022, doi:https://doi.org/10.1371/journal.pgen.1010299
+<br>
+3.Shrine N et al., Moderate-to-severe asthma in individuals of European ancestry: a genome-wide association study. Lancet Respir Med. 2019, doi: 10.1016/S2213-2600(18)30389-8.
+<br>
+4.Tsuo K. et al., Multi-ancestry meta-analysis of asthma identifies novel associations and highlights the value of increased power and diversity, Cell Genomics 2022, doi:https://doi.org/10.1016/j.xgen.2022.100212.
+<br>
+5.Packer RJ et al., Genome-wide association study of chronic sputum production implicates loci involved in mucus production and infection. Eur Respir J. 2023, doi:10.1183/13993003.01667-2022. PMID: 37263751.
 https://github.com/omerwe/polyfun
 
 

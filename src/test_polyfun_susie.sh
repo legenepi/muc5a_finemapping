@@ -4,10 +4,12 @@
 
 #set up local variable, environment to use:
 path_dir="/home/n/nnp5/PhD/PhD_project/muc5a_finemapping"
-module load python/gcc/3.9.10
-conda activate polyfun
 module load gcc/9.3
+module load python/gcc/3.9.10
 cd ${path_dir}/
+module unload R/4.2.1
+module load R/4.1.0
+conda activate polyfun
 
 ##MODERATE-TO-SEVERE:
 #${path_dir}/input/modsev_sumstat_maf already created in polyfun_susie.sh
@@ -89,7 +91,6 @@ Rscript ${path_dir}/src/compare_different_params.R \
     ${path_dir}/output/N1_info09_polyfun_susie_modsev_credset "info_090_N1" \
     ${path_dir}/output/Venn_asthma_credset_modsev_params.png \
     ${path_dir}/output/Intersection_asthma_credset_modsev_params_BP_list
-
 
 #####################################
 #GBMI ALL-COMER ASTHMA IN EUROPEAN:
@@ -221,38 +222,48 @@ Rscript ${path_dir}/src/compare_different_params.R \
     ${path_dir}/output/Venn_asthma_credset_gbmi_Nmin_params.png \
     ${path_dir}/output/Intersection_asthma_credset_gbmi_Nmin_params_BP_list
 
-#SUSiE did not fins any credible set in the moderate-to-severe with coverage set at 0.95;
-# what about if I set the coverage at .90?
-python /home/n/nnp5/software/polyfun/finemapper.py \
-    --ld ${path_dir}/input/chr11_1_3000001 \
-    --sumstats ${path_dir}/input/modsev_SNPs_PriCauPro \
-    --n 30810 \
-    --chr 11 \
-    --start 636478 \
-    --end 1636478 \
-    --method susie \
-    --max-num-causal 10 \
-    --allow-missing \
-    --out ${path_dir}/output/polyfun_susie_modsev_coverage90
+#comprare credsets:
+dos2unix ${path_dir}/src/compare_credset.R
+chmod o+x ${path_dir}/src/compare_credset.R
+Rscript ${path_dir}/src/compare_credset.R\
+    ${path_dir}/input/chronic_sputum_suppl.xlsx \
+    ${path_dir}/output/polyfun_susie_modsev_credset \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_credset_Nmedian \
+    "" \
+    "chronic sputum" \
+    "moderate-to-severe" \
+    "GBMI-all comer asthma"
 
-##but if rs35606069 is excluded because it is not found in the pre-calculated priors
-##could you repeat with just Susie (not with PolyFun)?
-#Run moderate-to-severe without prior so that the sumstats has the chronic sputum sentinel variant:
-#sumstat: gbmi_eur_sumstats_munged.parquet
-#--non-funct parameter for non-functionally informed fine-mapping
-python /home/n/nnp5/software/polyfun/finemapper.py \
-    --ld ${path_dir}/input/chr11_1_3000001 \
-    --sumstats ${path_dir}/input/gbmi_eur_sumstats_munged.parquet \
-    --n 30810 \
-    --chr 11 \
-    --start 636478 \
-    --end 1636478 \
-    --method susie \
-    --non-funct \
-    --max-num-causal 10 \
-    --allow-missing \
-    --out ${path_dir}/output/polyfun_susie_modsev_noprior
-Rscript ${path_dir}/src/credset.R \
-    ${path_dir}/output/polyfun_susie_modsev_noprior \
+Rscript ${path_dir}/src/compare_credset.R\
+    ${path_dir}/input/chronic_sputum_suppl.xlsx \
     ${path_dir}/output/polyfun_susie_modsev_noprior_credset \
-    ${path_dir}/output/polyfun_susie_modsev_noprior_credsetbysusie
+    ${path_dir}/output/polyfun_susie_gbmi_eur_credset_Nmedian \
+    "_modsevnoprior" \
+    "chronic sputum" \
+    "moderate-to-severe no prior" \
+    "GBMI-all comer asthma"
+
+Rscript ${path_dir}/src/compare_credset.R\
+    ${path_dir}/input/chronic_sputum_suppl.xlsx \
+    ${path_dir}/output/polyfun_susie_modsev_noprior_credset \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian_credsetbysusie \
+    "_modsevnoprior_gbmibysusie" \
+    "chronic sputum" \
+    "moderate-to-severe no prior" \
+    "GBMI-all comer asthma credset by susie"
+
+Rscript ${path_dir}/src/compare_credset.R\
+    ${path_dir}/input/chronic_sputum_suppl.xlsx \
+    ${path_dir}/output/polyfun_susie_modsev_noprior_credset \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian_noprior_credset \
+    "_modsevnoprior_gbminoprior" \
+    "chronic sputum" \
+    "moderate-to-severe no prior" \
+    "GBMI-all comer asthma no prior"
+
+#write in a separate file all the sumstat from suppl Table 10 just for Locus MUC2:
+#library(tidyverse)
+#library(readxl)
+#chsp <- read_xlsx("input/chronic_sputum_suppl.xlsx",sheet="S10-Credible sets", skip = 1, col_names=T)
+#chsp_muc2 <- chsp %>% filter(Locus == "MUC2")
+#write.table(chsp_muc2,"input/chronic_sputum_credset_muc2_sumstat", na="NA", sep=" ",quote=F,row.names=F)

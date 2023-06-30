@@ -23,7 +23,7 @@ sed -i 's/Coded/A1/g' ${path_dir}/input/modsev_sumstat
 sed -i 's/Non_coded/A2/g' ${path_dir}/input/modsev_sumstat
 sed -i 's/Coded_freq/A1_freq/g' ${path_dir}/input/modsev_sumstat
 
-#cretae MAF in R:
+#create MAF in R:
 module unload R/4.2.1
 module load R/4.1.0
 dos2unix ${path_dir}/src/create_maf.R
@@ -77,6 +77,26 @@ Rscript ${path_dir}/src/credset.R \
     ${path_dir}/output/polyfun_susie_modsev_credset \
     ${path_dir}/output/polyfun_susie_modsev_credset_credsetbysusie
 
+#NO FUNCTIONAL PRIORS in modsev:
+#--non-funct parameter for non-functionally informed fine-mapping
+python /home/n/nnp5/software/polyfun/finemapper.py \
+    --ld ${path_dir}/input/chr11_1_3000001 \
+    --sumstats ${path_dir}/input/modsev_sumstats_munged.parquet \
+    --n 30810 \
+    --chr 11 \
+    --start 636478 \
+    --end 1636478 \
+    --method susie \
+    --non-funct \
+    --max-num-causal 10 \
+    --allow-missing \
+    --out ${path_dir}/output/polyfun_susie_modsev_noprior
+Rscript ${path_dir}/src/credset.R \
+    ${path_dir}/output/polyfun_susie_modsev_noprior \
+    ${path_dir}/output/polyfun_susie_modsev_noprior_credset \
+    ${path_dir}/output/polyfun_susie_modsev_noprior_credsetbysusie
+
+#modesev credible set by susie is empty. 'credible set' column is 0 for all variants. Use the cumsum pip <= 0.95 strategy.
 
 #####################################
 #GBMI ALL-COMER ASTHMA IN EUROPEAN:
@@ -99,12 +119,10 @@ dos2unix ${path_dir}/src/create_maf_gbmi.R
 chmod o+x ${path_dir}/src/create_maf_gbmi.R
 Rscript ${path_dir}/src/create_maf_gbmi.R
 
-
-
 #convert sentinel SNPs interactively with liftOver (GRCh37 to GRCh38): https://genome.ucsc.edu/cgi-bin/hgLiftOver
 #and then download the file for broad pheno sentinel vars.
 awk '{print "chr"$1, $2, $2}' ${path_dir}/input/b38_chr11_gbmi_eur_sumstat_maf | \
-    tail -n +2 > input/b38_chr11_gbmi.bed
+    tail -n +2 > ${path_dir}/input/b38_chr11_gbmi.bed
 
 #Successfully converted 1341801 records
 #Conversion failed on 805 records.
@@ -144,7 +162,6 @@ python /home/n/nnp5/software/polyfun/extract_snpvar.py \
     --sumstats ${path_dir}/input/gbmi_eur_sumstats_munged.parquet \
     --allow-missing \
     --out ${path_dir}/input/gbmi_eur_SNPs_PriCauPro
-
 
 #Download pre-computed LD matrix from British ancestry UK Biobank individuals:
 #rs11245964 is te sentinel variant from GBMI eur all-comer asthma.
@@ -186,6 +203,22 @@ python /home/n/nnp5/software/polyfun/finemapper.py \
     --allow-missing \
     --out ${path_dir}/output/polyfun_susie_gbmi_eur_Nmin
 
+#NO FUNCTIONAL PRIORS in GBMI:
+start=$((1113278 - 500000))
+end=$((1113278 + 500000))
+python /home/n/nnp5/software/polyfun/finemapper.py \
+    --ld ${path_dir}/input/chr11_1_3000001 \
+    --sumstats ${path_dir}/input/gbmi_eur_sumstats_munged.parquet \
+    --n 1376100 \
+    --chr 11 \
+    --start $start \
+    --end $end \
+    --method susie \
+    --non-funct \
+    --max-num-causal 10 \
+    --allow-missing \
+    --out ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian_noprior
+
 conda deactivate polyfun
 
 #Extract credset 95% in R:
@@ -199,11 +232,31 @@ Rscript ${path_dir}/src/credset.R \
     ${path_dir}/output/polyfun_susie_gbmi_eur_credset_Nmin \
     ${path_dir}/output/polyfun_susie_gbmi_eur_Nmin_credsetbysusie
 
-#In R, make Venn diagram comparing the three fine-mapping credible sets:
-dos2unix ${path_dir}/src/compare_credset.R
-chmod o+x ${path_dir}/src/compare_credset.R
-Rscript ${path_dir}/src/compare_credset.R
+Rscript ${path_dir}/src/credset.R \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian_noprior \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian_noprior_credset \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian_noprior_credsetbysusie
 
+#In R, make Venn diagram comparing the three fine-mapping credible sets:
+#PolyFun + SuSiE:
+Rscript ${path_dir}/src/compare_credset.R\
+    ${path_dir}/input/chronic_sputum_suppl.xlsx \
+    ${path_dir}/output/polyfun_susie_modsev_credset \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian_credsetbysusie \
+    "_gbmibysusie" \
+    "chronic sputum" \
+    "moderate-to-severe" \
+    "GBMI-all comer asthma credset by susie"
+
+#SuSiE
+Rscript ${path_dir}/src/compare_credset.R\
+    ${path_dir}/input/chronic_sputum_suppl.xlsx \
+    ${path_dir}/output/polyfun_susie_modsev_noprior_credset \
+    ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian_noprior_credsetbysusie \
+    "_modsevnoprior_gbminopriorbysusie" \
+    "chronic sputum" \
+    "moderate-to-severe no prior" \
+    "GBMI-all comer asthma no prior credset by susie"
 
 #Using the credible set as found by susie:
 #In order for variables to be in a rho credible set, their PIP have to sum to greater than or equal to rho,
@@ -237,8 +290,25 @@ zgrep -w "1116931" ${path_dir}/modsev_SNPs_PriCauPro.miss.gz
 zgrep -w "rs779167905" /rfs/TobinGroup/kaf19/Public_data/gbmi_asthma/Asthma_Bothsex_eur_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz
 grep -w "1116931" ${path_dir}/output/polyfun_susie_gbmi_eur_Nmedian
 zgrep -w "1116931" /rfs/TobinGroup/kaf19/Public_data/gbmi_asthma/Asthma_Bothsex_eur_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz
-
 #GBMI sentinel variant: rs11245964
 zgrep "rs11245964" /rfs/TobinGroup/kaf19/Public_data/ukb_mod_sev_asthma/Shrine_30552067_moderate-severe_asthma.txt.gz
 grep "rs11245964" ${path_dir}/output/polyfun_susie_modsev
 grep -w "rs11245964" /data/gen1/Phlegm/Results_files/GWAS/combined_results_INFO_MAC20
+
+
+#cp final output into output_final:
+cp output/polyfun_susie_modsev \
+    output/polyfun_susie_gbmi_eur_Nmedian \
+    output/polyfun_susie_modsev_credset \
+    output/polyfun_susie_gbmi_eur_Nmedian_credsetbysusie \
+    muc5ac_finemap_output_30062023/
+
+cp output/polyfun_susie_modsev_noprior \
+    output/polyfun_susie_gbmi_eur_Nmedian_noprior \
+    output/polyfun_susie_modsev_noprior_credset \
+    output/polyfun_susie_gbmi_eur_Nmedian_noprior_credsetbysusie \
+    muc5ac_finemap_output_30062023/
+
+cp output/credset_3_gwas_gbmibysusie \
+    output/credset_3_gwas_modsevnoprior_gbminopriorbysusie \
+    muc5ac_finemap_output_30062023/

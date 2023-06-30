@@ -6,9 +6,16 @@ library(readxl)
 library(VennDiagram)
 library(gplots)
 
-chsp <- read_xlsx("/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/input/chronic_sputum_suppl.xlsx", sheet="S10-Credible sets", skip = 1, col_names=T)
-modsev <- fread("/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/polyfun_susie_modsev_credset")
-gbmi <- fread("/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/polyfun_susie_gbmi_eur_credset_Nmedian")
+args = commandArgs(trailingOnly=TRUE)
+
+#input credset:
+chsp <- read_xlsx(args[1], sheet="S10-Credible sets", skip = 1, col_names=T)
+modsev <- fread(args[2])
+gbmi <- fread(args[3])
+suffix_output <- args[4]
+
+
+#Data pre-processing:
 colnames(chsp)[2] <- "to_separate"
 chsp <- chsp %>% separate(to_separate, c("CHR", "BP"), sep=":")
 colnames(chsp)[5] <- "to_separate2"
@@ -42,23 +49,28 @@ modsev$CHR <- as.numeric(modsev$CHR)
 gbmi <- gbmi %>% rename(CHR = gbmi_CHR)
 gbmi$CHR <- as.numeric(gbmi$CHR)
 
-chsp_modsev <- full_join(chsp,modsev,by=c("BP","CHR","SNP"))
-chsp_modsev_gbmi <- full_join(chsp_modsev,gbmi,by=c("BP","CHR","SNP"))
+#join dfs:
+chsp_modsev <- full_join(chsp,modsev,by=c("BP","CHR"))
+chsp_modsev_gbmi <- full_join(chsp_modsev,gbmi,by=c("BP","CHR"))
 chsp_modsev_gbmi <- chsp_modsev_gbmi %>% arrange(BP)
-write.table(chsp_modsev_gbmi,"/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/credset_3_gwas.txt", na="NA", sep=" ",quote=F,row.names=F)
 
+write.table(chsp_modsev_gbmi,paste0("output/credset_3_gwas",suffix_output), na="NA", sep=" ",quote=F,row.names=F)
+
+
+#plot
+flog.threshold(ERROR) #to avoid the log file to be produced
 venn.diagram(
    x = list(
      chsp %>% select(BP) %>% distinct() %>% unlist(),
      modsev %>%  select(BP) %>% distinct() %>% unlist(),
      gbmi %>%  select(BP) %>% distinct() %>% unlist()
     ),
-   category.names = c("chronic sputum", "moderate-to-severe", "GBMI-all comer asthma"),
-   filename = "/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Venn_asthma_credset.png",
+   category.names = c(args[5], args[6], args[7]),
+   filename = paste0("output/Venn_asthma_credset",suffix_output,".png"),
    output = TRUE ,
            imagetype="png" ,
-           height = 900 ,
-           width = 1000 ,
+           height = 1100 ,
+           width = 1500 ,
            resolution = 400,
            compression = "lzw",
            lwd = 1,
@@ -68,12 +80,15 @@ venn.diagram(
            fontfamily = "sans",
            cat.cex = 0.3,
            cat.default.pos = "outer")
+
+
 #use venn() in package gplots to obtain the list of participants for each intersection:
 listInput <- list(chsp %>% select(BP) %>% distinct() %>% unlist(),
      modsev %>%  select(BP) %>% distinct() %>% unlist(),
      gbmi %>%  select(BP) %>% distinct() %>% unlist())
 ItemsList <- venn(listInput, show.plot = FALSE, category.names = c("chronic sputum", "moderate-to-severe", "GBMI-all comer asthma"))
+
 #write into an output file the intersection:
-file.create("${path_dir}/output/Intersection_asthma_credset_BP_list")
+file.create(paste0("output/Intersection_asthma_credset_BP_list",suffix_output))
 for (i in seq(1,length(attributes(ItemsList)$intersections))) {
-write.table(attributes(ItemsList)$intersections[i],"/home/n/nnp5/PhD/PhD_project/muc5a_finemapping/output/Intersection_asthma_credset_BP_list",append=T,row.names = FALSE, quote=FALSE)}
+write.table(attributes(ItemsList)$intersections[i],paste0("output/Intersection_asthma_credset_BP_list",suffix_output),append=T,row.names = FALSE, quote=FALSE)}
